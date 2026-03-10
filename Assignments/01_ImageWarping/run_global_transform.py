@@ -8,6 +8,9 @@ def to_3x3(affine_matrix):
 
 # Function to apply transformations based on user inputs
 def apply_transform(image, scale, rotation, translation_x, translation_y, flip_horizontal):
+    
+    if image is None:
+        return None
 
     # Convert the image from PIL format to a NumPy array
     image = np.array(image)
@@ -18,8 +21,15 @@ def apply_transform(image, scale, rotation, translation_x, translation_y, flip_h
     image = np.array(image_new)
     transformed_image = np.array(image)
 
-    ### FILL: Apply Composition Transform 
     # Note: for scale and rotation, implement them around the center of the image （围绕图像中心进行放缩和旋转）
+    rows, cols = transformed_image.shape[0:2]
+    transform_mat = cv2.getRotationMatrix2D(((cols - 1) / 2.0, (rows - 1) / 2.0), rotation, scale)
+    transform_mat[0, 2] += translation_x
+    transform_mat[1, 2] += translation_y
+    transformed_image = cv2.warpAffine(transformed_image, transform_mat, (cols, rows))
+
+    if flip_horizontal:
+        transformed_image = cv2.flip(transformed_image, 1)
 
     return transformed_image
 
