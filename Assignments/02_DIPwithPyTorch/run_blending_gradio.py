@@ -187,8 +187,8 @@ def cal_laplacian_loss(foreground_img, foreground_mask, blended_img, background_
     loss = torch.tensor(0.0, device=foreground_img.device)
 
     laplacian_filter = torch.tensor([[0, -1, 0], [-1, 4, -1], [0, -1, 0]]).float().unsqueeze(0).unsqueeze(0).expand(3, -1, -1, -1).to(foreground_img.device)
-    fg_laplace = torch.nn.functional.conv2d(foreground_img, laplacian_filter, padding='same', group=3)
-    bld_laplace = torch.nn.functional.conv2d(blended_img, laplacian_filter, padding='same', group=3)
+    fg_laplace = torch.nn.functional.conv2d(foreground_img, laplacian_filter, padding='same', groups=3)
+    bld_laplace = torch.nn.functional.conv2d(blended_img, laplacian_filter, padding='same', groups=3)
 
     diff = fg_laplace[foreground_mask.bool().expand(-1, 3, -1, -1)] - bld_laplace[background_mask.bool().expand(-1, 3, -1, -1)]
     diff_sq = diff * diff
