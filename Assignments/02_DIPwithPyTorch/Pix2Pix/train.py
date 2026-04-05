@@ -6,6 +6,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from facades_dataset import FacadesDataset
+from cityscapes_dataset import CityscapesDataset
 from FCN_network import FullyConvNetwork
 from torch.optim.lr_scheduler import StepLR
 
@@ -142,8 +143,10 @@ def main():
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
     # Initialize datasets and dataloaders
-    train_dataset = FacadesDataset(list_file='train_list.txt')
-    val_dataset = FacadesDataset(list_file='val_list.txt')
+    # train_dataset = FacadesDataset(list_file='train_list.txt')
+    # val_dataset = FacadesDataset(list_file='val_list.txt')
+    train_dataset = CityscapesDataset(dir="datasets/cityscapes/train")
+    val_dataset = CityscapesDataset(dir="datasets/cityscapes/val")
 
     train_loader = DataLoader(train_dataset, batch_size=100, shuffle=True, num_workers=4)
     val_loader = DataLoader(val_dataset, batch_size=100, shuffle=False, num_workers=4)
