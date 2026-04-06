@@ -21,8 +21,9 @@ python run_blending_gradio.py
 
 To run Pix2Pix, run:
 
-```point
-python Pix2Pix/train.py
+```bash
+bash download_dataset.sh cityscapes
+python train.py
 ```
 
 ## Results
