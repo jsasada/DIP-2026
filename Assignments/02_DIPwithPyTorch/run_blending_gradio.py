@@ -2,7 +2,9 @@ import gradio as gr
 from PIL import ImageDraw
 import numpy as np
 import torch
-from operator import attrgetter
+import cv2
+# from operator import attrgetter
+
 
 # Initialize the polygon state
 def initialize_polygon():
@@ -93,14 +95,14 @@ def update_background(background_image_original, polygon_state, dx, dy):
     else:
         return background_image_original
     
-class Edge:
-    def __init__(self, x, dx, ymax):
-        self.x = x
-        self.dx = dx
-        self.ymax = ymax
+# class Edge:
+#     def __init__(self, x, dx, ymax):
+#         self.x = x
+#         self.dx = dx
+#         self.ymax = ymax
 
-    def step(self):
-        self.x += self.dx
+#     def step(self):
+#         self.x += self.dx
 
 # Create a binary mask from polygon points
 def create_mask_from_points(points, img_h, img_w):
@@ -115,60 +117,69 @@ def create_mask_from_points(points, img_h, img_w):
     Returns:
         np.ndarray: Binary mask of shape (img_h, img_w).
     """
+
     mask = np.zeros((img_h, img_w), dtype=np.uint8)
     
-    # 多边形扫描线算法
-    # 创建静态边表
-    edge_table = [None] * img_h
-    ymin = img_h
-    ymax = 0
-    for i in range(len(points)):
-        p = points[i].copy()
-        q = points[(i+1)%len(points)].copy()
-        if p[1] == q[1]: continue 
-        if p[1] > q[1]: p, q = q, p
-        if p[1] >= img_h: continue
-        dx = (q[0] - p[0]) / (q[1] - p[1])
-        if p[1] < 0:
-            p[1] = 0
-            p[0] = q[0] - dx * q[1]
-        if edge_table[p[1]] == None: 
-            edge_table[p[1]] = [Edge(p[0], dx, q[1])]
-        else: 
-            edge_table[p[1]].append(Edge(p[0], dx, q[1]))
-
-        if p[1] < ymin : ymin = p[1]
-        if q[1] > ymax : ymax = q[1]
-    if ymin < 0: ymin = 0
-    if ymax >= img_h: ymax = img_h-1
-        
-    # 从y=ymin开始维护动态边表
-    active_edge_table = []
-    for y in range(ymin, ymax+1):
-        # 加入静态边表中的边并排序
-        if edge_table[y] != None:
-            active_edge_table.extend(edge_table[y])
-            active_edge_table = sorted(active_edge_table, key=attrgetter('x', 'dx'))
-        
-        # 删除动态边表中到达ymax的边
-        active_edge_table = [e for e in active_edge_table if (e.ymax != y)]
-        
-        # 两两配对填色
-        if len(active_edge_table) % 2 == 0:
-            n = round(len(active_edge_table) / 2)
-        else:
-            n = round((len(active_edge_table) - 1) / 2)
-        for i in range(n):
-            start = round(np.ceil(active_edge_table[2*i].x))
-            start = np.clip(start, 0, img_w-1)
-            end = round(np.floor(active_edge_table[2*i+1].x)+1)
-            end = np.clip(end, 0, img_w)
-            mask[y, start:end] = 255
-
-        # 更新边
-        for e in active_edge_table: e.step()
-
+    pts = np.array(points, dtype=np.int32)
+    
+    cv2.fillPoly(mask, [pts], color=255)
+    
     return mask
+
+    # mask = np.zeros((img_h, img_w), dtype=np.uint8)
+    
+    # # 多边形扫描线算法
+    # # 创建静态边表
+    # edge_table = [None] * img_h
+    # ymin = img_h
+    # ymax = 0
+    # for i in range(len(points)):
+    #     p = points[i].copy()
+    #     q = points[(i+1)%len(points)].copy()
+    #     if p[1] == q[1]: continue 
+    #     if p[1] > q[1]: p, q = q, p
+    #     if p[1] >= img_h: continue
+    #     dx = (q[0] - p[0]) / (q[1] - p[1])
+    #     if p[1] < 0:
+    #         p[1] = 0
+    #         p[0] = q[0] - dx * q[1]
+    #     if edge_table[p[1]] == None: 
+    #         edge_table[p[1]] = [Edge(p[0], dx, q[1])]
+    #     else: 
+    #         edge_table[p[1]].append(Edge(p[0], dx, q[1]))
+
+    #     if p[1] < ymin : ymin = p[1]
+    #     if q[1] > ymax : ymax = q[1]
+    # if ymin < 0: ymin = 0
+    # if ymax >= img_h: ymax = img_h-1
+        
+    # # 从y=ymin开始维护动态边表
+    # active_edge_table = []
+    # for y in range(ymin, ymax+1):
+    #     # 加入静态边表中的边并排序
+    #     if edge_table[y] != None:
+    #         active_edge_table.extend(edge_table[y])
+    #         active_edge_table = sorted(active_edge_table, key=attrgetter('x', 'dx'))
+        
+    #     # 删除动态边表中到达ymax的边
+    #     active_edge_table = [e for e in active_edge_table if (e.ymax != y)]
+        
+    #     # 两两配对填色
+    #     if len(active_edge_table) % 2 == 0:
+    #         n = round(len(active_edge_table) / 2)
+    #     else:
+    #         n = round((len(active_edge_table) - 1) / 2)
+    #     for i in range(n):
+    #         start = round(np.ceil(active_edge_table[2*i].x))
+    #         start = np.clip(start, 0, img_w-1)
+    #         end = round(np.floor(active_edge_table[2*i+1].x)+1)
+    #         end = np.clip(end, 0, img_w)
+    #         mask[y, start:end] = 255
+
+    #     # 更新边
+    #     for e in active_edge_table: e.step()
+
+    # return mask
 
 # Calculate the Laplacian loss between the foreground and blended image
 def cal_laplacian_loss(foreground_img, foreground_mask, blended_img, background_mask):
