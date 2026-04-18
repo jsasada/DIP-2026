@@ -100,4 +100,4 @@ bash run_colmap.sh
 
 **Result (reconstructed 3D point cloud):**
 
-<img src="pics/COLMAP_result.gif" alt="result" width="300">
+<img src="pics/COLMAP_result.gif" alt="result" width="800">
