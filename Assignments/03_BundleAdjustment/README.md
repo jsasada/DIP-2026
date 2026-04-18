@@ -1,6 +1,6 @@
 # Assignment 3 - Bundle Adjustment
 
-### In this assignment, you will: (1) implement Bundle Adjustment from scratch using PyTorch, and (2) use COLMAP to perform full 3D reconstruction from multi-view images.
+### This repository is Chen, Yuxi's implementation of Assignment_03 of DIP: (1) implement Bundle Adjustment from scratch using PyTorch, and (2) use COLMAP to perform full 3D reconstruction from multi-view images.
 
 ### Resources:
 - [Teaching Slides](https://pan.ustc.edu.cn/share/index/66294554e01948acaf78)
@@ -29,14 +29,6 @@ data/
 - `x, y`：该点在该视角下的像素坐标
 - `visibility`：1.0 表示该点在该视角下可见，0.0 表示被遮挡
 
-可参考 [visualize_data.py](visualize_data.py) 了解数据读取和可视化方式。
-
-**Multi-view images & 2D projections:**
-
-<img src="pics/data_overview.png" alt="data overview" width="800">
-
-上排：50 个视角中的 5 个渲染图像；下排：对应视角的 2D 投影点叠加
-
 ### Known Information
 
 | 参数 | 值 | 说明 |
@@ -54,36 +46,28 @@ data/
 2. **每个相机的外参** (Extrinsics)：旋转 R 和平移 T（共 50 组）
 3. **所有 3D 点的坐标** (X, Y, Z)（共 20000 个）
 
-#### 具体要求：
+## Requirements
+To install requirements:
 
-1. **实现投影函数**：根据相机内参和外参（R, T），将 3D 点投影到 2D 像素坐标。
-2. **构建优化目标**：最小化 2D 重投影误差（predicted 2D - observed 2D 的距离）。
-3. **参数化与优化**：使用 Euler 角参数化旋转（推荐），使用 PyTorch 的优化器（如 Adam）进行梯度下降。
-4. **可视化与评估**：展示优化过程中 loss 的变化曲线，以及最终重建的 3D 点云（保存为带颜色的 OBJ 文件，颜色从 `points3d_colors.npy` 读取）。
+```setup
+python -m pip install -r requirements.txt
+```
 
-**Expected result (reconstructed 3D point cloud):**
+## Running
 
-<img src="pics/result.gif" alt="result" width="300">
+To run bundle adjustment, run:
 
-#### Coordinate System & Initialization
+```
+python bundle_adjustment.py
+```
 
-<img src="pics/coordinate_system.png" alt="coordinate system" width="500">
+### Results
 
-物体位于原点，正面朝 +Z 方向。相机在 +Z 侧面对物体正面。由于相机变换 `[Xc,Yc,Zc] = R @ P + T`，当 R ≈ I 时，物体相对于相机在 -Z 方向（Zc < 0），因此 T 初始化为 `[0, 0, -d]`。由于 Zc < 0，投影公式中 X 方向需要取负号来保证左右不翻转，而 Y 方向因为图像坐标 y 轴向下，恰好与负 Z 抵消，不需要取负号。
+### Reconstructed 3D Point Cloud
+<img src="pics/BA_result.gif" alt="result" width="800">
 
-#### Hints:
-- 投影公式：`u = -f * Xc/Zc + cx`，`v = f * Yc/Zc + cy`，其中 `[Xc, Yc, Zc] = R @ [X, Y, Z]^T + T`
-- `cx = image_width / 2`，`cy = image_height / 2`，焦距 `f` 未知，需要优化
-- 焦距初始化建议：对于常见的相机，FoV 一般在 30°~90° 之间，可由此估算 `f` 的合理范围（`f = H / (2 * tan(fov/2))`）
-- 旋转矩阵推荐使用 **Euler 角**参数化（3个参数），PyTorch3D 提供了方便的转换函数：
-  ```python
-  from pytorch3d.transforms import euler_angles_to_matrix
-  R = euler_angles_to_matrix(euler_angles, convention="XYZ")  # (*, 3) -> (*, 3, 3)
-  ```
-- 初始化建议：所有视角都在正前方附近，可以将相机旋转初始化为单位矩阵（Euler 角为零），平移初始化为 `[0, 0, -d]`（`d` 为合理的观测距离，如 2~3，负号表示相机在物体前方）；3D 点初始化在原点附近的随机位置
-- 带颜色的 OBJ 格式：每行 `v x y z r g b`，其中 `r g b` 在 `[0, 1]` 范围内
-
----
+### Loss Curve
+<img src="loss_curve.png" alt="result" width="800">
 
 ## Task 2: 3D Reconstruction with COLMAP
 
@@ -99,15 +83,21 @@ data/
 
 完整的命令行脚本见 [run_colmap.sh](run_colmap.sh)，可参考 [COLMAP CLI Tutorial](https://colmap.github.io/cli.html) 了解各步骤详情。
 
-#### COLMAP 安装：
-- **Linux**：参考 [官方安装文档](https://colmap.github.io/install.html) 从源码编译（需开启 CUDA 支持），或使用 `conda install -c conda-forge colmap`
-- **Windows**：从 [COLMAP Releases](https://github.com/colmap/colmap/releases) 下载 `COLMAP-dev-windows-cuda.zip`，解压后将目录加入 PATH 即可使用
+## Requirements
+To install requirements:
 
-稠密重建需要 CUDA GPU；如无 GPU，可只完成到稀疏重建步骤。
+```setup
+conda install -c conda-forge colmap
+```
 
----
+## Running
 
-### Requirements:
-- 请自行环境配置，推荐使用 [conda 环境](https://docs.anaconda.com/miniconda/)
-- Task 1 不提供代码框架，请自行设计代码结构
-- 按照模板要求写 Markdown 版作业报告，包含 Task 1 和 Task 2 的结果
+To run 3D Reconstruction with COLMAP, run:
+
+```
+bash run_colmap.sh
+```
+
+**Result (reconstructed 3D point cloud):**
+
+<img src="pics/COLMAP_result.gif" alt="result" width="300">

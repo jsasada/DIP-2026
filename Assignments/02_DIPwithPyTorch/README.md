@@ -1,7 +1,7 @@
 # Assignment 2 - DIP with PyTorch
 ## Implementation of traditional DIP (Poisson Image Editing) and deep learning-based DIP (Pix2Pix) with PyTorch.
 
-This repository is Chen Yuxi's implementation of Assignment_02 of DIP. 
+This repository is Chen, Yuxi's implementation of Assignment_02 of DIP. 
 
 ## Requirements
 

@@ -1,7 +1,7 @@
 # Assignment 1 - Image Warping
 ## Implementation of Image Geometric Transformation
 
-This repository is Chen Yuxi's implementation of Assignment_01 of DIP. 
+This repository is Chen, Yuxi's implementation of Assignment_01 of DIP. 
 
 <img src="pics/teaser.png" alt="alt text" width="800">
 
