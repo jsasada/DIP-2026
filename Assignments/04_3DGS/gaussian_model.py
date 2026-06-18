@@ -73,8 +73,13 @@ class GaussianModel(nn.Module):
     def _init_opacities(self) -> None:
         """Initialize opacities in logit space for sigmoid activation"""
         # Initialize to high opacity (sigmoid(8.0) ≈ 0.9997)
+        # self.opacities = nn.Parameter(
+        #     8.0 * torch.ones((self.n_points, 1), dtype=torch.float32)
+        # )
+        
+        init_opacity = 0.1
         self.opacities = nn.Parameter(
-            8.0 * torch.ones((self.n_points, 1), dtype=torch.float32)
+            torch.logit(torch.full((self.n_points, 1), init_opacity, dtype=torch.float32))
         )
 
     def _compute_rotation_matrices(self) -> torch.Tensor:
@@ -103,15 +108,18 @@ class GaussianModel(nn.Module):
     def compute_covariance(self) -> torch.Tensor:
         """Compute covariance matrices for all gaussians"""
         # Get rotation matrices
-        R = self._compute_rotation_matrices()
+        R = self._compute_rotation_matrices() # [N, 3, 3]
         
         # Convert scales from log space and create diagonal matrices
-        scales = torch.exp(self.scales)
-        S = torch.diag_embed(scales)
+        # scales = torch.exp(self.scales) # [N, 3]
+        scales = torch.exp(torch.clamp(self.scales, min=-10.0, max=10.0))
+        S = torch.diag_embed(scales) # [N, 3, 3]
         
         # Compute covariance
         ### FILL:
         ### Covs3d = ...
+        RS = R.bmm(S)
+        Covs3d = RS.bmm(RS.transpose(-2, -1))
         
         return Covs3d
 

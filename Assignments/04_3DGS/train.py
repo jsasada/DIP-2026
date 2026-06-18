@@ -14,6 +14,8 @@ from gaussian_model import GaussianModel
 from gaussian_renderer import GaussianRenderer
 from data_utils import ColmapDataset
 
+torch.autograd.set_detect_anomaly(True)
+
 @dataclass
 class TrainConfig:
     num_epochs: int = 200
@@ -41,13 +43,13 @@ class GaussianTrainer:
         
         # Initialize optimizer
         optable_params = [
-            {'params': [self.model.positions], 'lr': 0.000016, "name": "xyz"},
+            {'params': [self.model.positions], 'lr': 0.00016, "name": "xyz"},
             {'params': [self.model.colors], 'lr': 0.025, "name": "color"},
             {'params': [self.model.opacities], 'lr': 0.05, "name": "opacity"},
             {'params': [self.model.scales], 'lr': 0.005, "name": "scaling"},
             {'params': [self.model.rotations], 'lr': 0.001, "name": "rotation"},
         ]
-        self.optimizer = torch.optim.Adam(optable_params, lr=0.001, eps=1e-15)
+        self.optimizer = torch.optim.Adam(optable_params, lr=0.001, eps=1e-8)
         
         # Create checkpoint and log directories
         Path(config.checkpoint_dir).mkdir(exist_ok=True, parents=True)

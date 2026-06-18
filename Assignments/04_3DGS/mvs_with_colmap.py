@@ -9,14 +9,16 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Run COLMAP for multi-view stereo')
     parser.add_argument('--data_dir', type=str, required=True, help='Path to the input directory containing images in data_dir/images')
+    parser.add_argument("--no_gpu", action='store_true')
     args = parser.parse_args()
     data_dir = args.data_dir
+    use_gpu = 1 if not args.no_gpu else 0
 
     # Feature extraction with shared intrinsics (assume it's the same camera)
-    subprocess.run(['colmap', 'feature_extractor', '--image_path', os.path.join(data_dir, 'images'), '--database_path', os.path.join(data_dir, 'database.db'), '--ImageReader.single_camera', '1', '--ImageReader.camera_model', 'PINHOLE', '--SiftExtraction.use_gpu', '0'], check=True)
+    subprocess.run(['colmap', 'feature_extractor', '--image_path', os.path.join(data_dir, 'images'), '--database_path', os.path.join(data_dir, 'database.db'), '--ImageReader.single_camera', '1', '--ImageReader.camera_model', 'PINHOLE', '--SiftExtraction.use_gpu', str(use_gpu)], check=True)
 
     # Feature matching
-    subprocess.run(['colmap', 'exhaustive_matcher', '--database_path', os.path.join(data_dir, 'database.db'), '--SiftMatching.use_gpu', '0'], check=True)
+    subprocess.run(['colmap', 'exhaustive_matcher', '--database_path', os.path.join(data_dir, 'database.db'), '--SiftMatching.use_gpu', str(use_gpu)], check=True)
 
     # Create sparse reconstruction folder
     os.makedirs(os.path.join(data_dir, 'sparse'), exist_ok=True)
