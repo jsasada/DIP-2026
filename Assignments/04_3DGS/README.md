@@ -1,7 +1,5 @@
 # Assignment 4 - Implement Simplified 3D Gaussian Splatting
 
-### In this assignment, you will implement a simplified version of 3D Gaussian Splatting (3DGS) in pure PyTorch — a complete pipeline that reconstructs a 3D scene from multi-view images via differentiable rasterization of 3D Gaussians.
-
 ### Resources:
 - [Paper: 3D Gaussian Splatting for Real-Time Radiance Field Rendering](https://repo-sam.inria.fr/fungraph/3d-gaussian-splatting/3d_gaussian_splatting_low.pdf)
 - [3DGS Official Implementation](https://github.com/graphdeco-inria/gaussian-splatting)
@@ -12,7 +10,7 @@
 
 ### Background
 
-3D Gaussian Splatting 将场景表示为一组带颜色和不透明度的 3D 高斯，通过将其投影到图像平面做 α-blending 实现可微体渲染。本作业将带你从零实现一个**简化版** 3DGS（不含 tile-based rasterizer 和 adaptive densification），完整体验 pipeline：相机参数恢复 → 3D 高斯参数化 → 投影 → α-blending。
+3D Gaussian Splatting 将场景表示为一组带颜色和不透明度的 3D 高斯，通过将其投影到图像平面做 α-blending 实现可微体渲染。本作业实现一个**简化版** 3DGS（不含 tile-based rasterizer 和 adaptive densification），完整体验 pipeline：相机参数恢复 → 3D 高斯参数化 → 投影 → α-blending。
 
 ### Data
 
@@ -22,8 +20,6 @@ data/
 └── lego/images/    # 100 张 multi-view 渲染图像
 ```
 
-两个场景任选其一，下面以 `chair` 为例（你也可以用自己的多视角图像，放入 `<scene>/images/` 即可）。
-
 ---
 
 ## Task 1: Structure-from-Motion with COLMAP
@@ -31,14 +27,41 @@ data/
 使用 COLMAP 恢复相机内外参，并得到一组稀疏 3D 点作为 3DGS 的初始化：
 
 ```bash
-python mvs_with_colmap.py --data_dir data/chair
+python mvs_with_colmap.py --data_dir path/to/data
 ```
 
 将恢复的 3D 点重投影回各视角进行验证：
 
 ```bash
-python debug_mvs_by_projecting_pts.py --data_dir data/chair
+python debug_mvs_by_projecting_pts.py --data_dir path/to/data
 ```
+
+得到的部分结果如下：
+
+<table align="center">
+  <tr>
+    <td align="center">
+      <img src="data/chair/projections/r_0.png" alt="result" width="800">
+    </td>
+    <td align="center">
+      <img src="data/chair/projections/r_20.png" alt="result" width="800">
+    </td>
+    <td align="center">
+      <img src="data/chair/projections/r_40.png" alt="result" width="800">
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="data/chair/projections/r_60.png" alt="result" width="800">
+    </td>
+    <td align="center">
+      <img src="data/chair/projections/r_80.png" alt="result" width="800">
+    </td>
+    <td align="center">
+      <img src="data/chair/projections/r_99.png" alt="result" width="800">
+    </td>
+  </tr>
+</table>
 
 ---
 
@@ -58,9 +81,9 @@ python debug_mvs_by_projecting_pts.py --data_dir data/chair
 | Opacity o | 标量 |
 | Color c | RGB 三通道 |
 
-[gaussian_model.py#L32](gaussian_model.py#L32) 已实现这些参数的初始化。
+[gaussian_model.py#L32](gaussian_model.py#L32) 中实现这些参数的初始化。
 
-> **TODO**：在 [gaussian_model.py#L103](gaussian_model.py#L103) 中由四元数和缩放参数构造 **3D 协方差矩阵**。
+[gaussian_model.py#L103](gaussian_model.py#L103) 中由四元数和缩放参数构造3D 协方差矩阵。
 
 ### 2.2 Project 3D Gaussians to 2D
 
@@ -71,7 +94,7 @@ python debug_mvs_by_projecting_pts.py --data_dir data/chair
 
 投影后的 2D 协方差为 $\Sigma' = J W \Sigma W^T J^T$。
 
-> **TODO**：在 [gaussian_renderer.py#L26](gaussian_renderer.py#L26) 中实现 3D → 2D 投影。
+[gaussian_renderer.py#L26](gaussian_renderer.py#L26) 中实现 3D → 2D 投影。
 
 ### 2.3 Compute 2D Gaussian Values
 
@@ -83,7 +106,7 @@ $$
 
 其中 **μᵢ** 与 **Σᵢ** 为投影后的 2D 高斯中心与协方差。
 
-> **TODO**：在 [gaussian_renderer.py#L61](gaussian_renderer.py#L61) 中计算 Gaussian 取值。
+[gaussian_renderer.py#L61](gaussian_renderer.py#L61) 中计算 Gaussian 取值。
 
 ### 2.4 Volume Rendering via α-blending
 
@@ -95,35 +118,97 @@ $$
 
 最终像素颜色由各高斯按 α-blending 累加（paper 公式 1-3）。
 
-> **TODO**：在 [gaussian_renderer.py#L83](gaussian_renderer.py#L83) 中实现最终渲染。
+[gaussian_renderer.py#L83](gaussian_renderer.py#L83) 中实现最终渲染。
 
 ### Train your 3DGS
 
-完成上述代码后，启动训练：
+启动训练：
 
 ```bash
-python train.py --colmap_dir data/chair --checkpoint_dir data/chair/checkpoints
+python train.py --colmap_dir path/to/data --checkpoint_dir path/to/checkpoint
 ```
 
-### Render a Multi-view Video (Optional)
+训练过程中部分对比图如下：
+<table align="center">
+  <tr>
+    <td align="center">
+      <img src="data/chair/checkpoints/debug_images/epoch_0000.png" alt="result" width="800">
+      <br>
+      <b>Epoch 0</b>
+    </td>
+    <td align="center">
+      <img src="data/chair/checkpoints/debug_images/epoch_0005.png" alt="result" width="800">
+      <br>
+      <b>Epoch 5</b>
+    </td>
+    <td align="center">
+      <img src="data/chair/checkpoints/debug_images/epoch_0010.png" alt="result" width="800">
+      <br>
+      <b>Epoch 10</b>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="data/chair/checkpoints/debug_images/epoch_0020.png" alt="result" width="800">
+      <br>
+      <b>Epoch 20</b>
+    </td>
+    <td align="center">
+      <img src="data/chair/checkpoints/debug_images/epoch_0040.png" alt="result" width="800">
+      <br>
+      <b>Epoch 40</b>
+    </td>
+    <td align="center">
+      <img src="data/chair/checkpoints/debug_images/epoch_0080.png" alt="result" width="800">
+      <br>
+      <b>Epoch 80</b>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="data/chair/checkpoints/debug_images/epoch_0120.png" alt="result" width="800">
+      <br>
+      <b>Epoch 120</b>
+    </td>
+    <td align="center">
+      <img src="data/chair/checkpoints/debug_images/epoch_0150.png" alt="result" width="800">
+      <br>
+      <b>Epoch 150</b>
+    </td>
+    <td align="center">
+      <img src="data/chair/checkpoints/debug_images/epoch_0199.png" alt="result" width="800">
+      <br>
+      <b>Epoch 199</b>
+    </td>
+  </tr>
+</table>
+
+### Render a Multi-view Video
 
 训练完成后，可用 [render_3dgs_mv.py](render_3dgs_mv.py) 沿一个绕场景中心的**水平圆轨迹**渲染一段连续视角视频，便于直观检查重建质量：
 
 ```bash
 python render_3dgs_mv.py \
-    --colmap_dir data/chair \
-    --checkpoint data/chair/checkpoints/checkpoint_000060.pt \
+    --colmap_dir path/to/data \
+    --checkpoint path/to/checkpoint \
     --num_frames 240 --fps 30
 # 默认输出: <colmap_dir>/render_mv.mp4
 ```
 
 up 轴由训练相机的 y 轴平均自动估计（NeRF 合成数据图像均为正放），orbit 半径与高度取训练相机的均值。
 
+<table align="center">
+    <video width="800" controls>
+        <source src="data/chair/render_mv.mp4" type="video/mp4">
+        您的浏览器不支持视频标签，请升级浏览器。
+    </video>
+</table>
+
 ---
 
 ## Task 3: Compare with the Official 3DGS Implementation
 
-本作业为纯 PyTorch 实现，训练速度与显存效率远不如官方实现，且未实现 adaptive Gaussian densification 等关键模块。请使用相同数据集运行 [官方 3DGS](https://github.com/graphdeco-inria/gaussian-splatting)，从**渲染质量、训练速度、显存占用**三方面进行对比，并在报告中讨论差异来源。
+本作业为纯 PyTorch 实现，训练速度与显存效率远不如官方实现，且未实现 adaptive Gaussian densification 等关键模块。使用相同数据集运行 [官方 3DGS](https://github.com/graphdeco-inria/gaussian-splatting)，从**渲染质量、训练速度、显存占用**三方面进行对比，并在报告中讨论差异来源。
 
 ---
 
